@@ -20,7 +20,8 @@ export const signUp = {
                 user_id,
                 email,
                 firstName,
-                lastName
+                lastName,
+                newUser: true,
             },
             process.env.JWT_SECRET,
             {

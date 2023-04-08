@@ -9,16 +9,17 @@ export const signIn = {
         try {
             const { email, password } = req.body;
             const db = await getConnectionToDB();
-            const [ result ] = await db.query(`SELECT user_id, first_name, last_name, password FROM users WHERE email = '${email}'`);
+            const [ result ] = await db.query(`SELECT user_id, first_name, last_name, password, new_user FROM users WHERE email = '${email}'`);
             if(result.length === 0) return res.sendStatus(404);
-            const { user_id, first_name: firstName, last_name: lastName, password: passwordHash } = result[0];
+            const { user_id, first_name: firstName, last_name: lastName, password: passwordHash, new_user: newUser } = result[0];
             const isCorrect = await bcrypt.compare(password, passwordHash);
             if(isCorrect){
                 jwt.sign({
                     user_id,
                     email,
                     firstName,
-                    lastName
+                    lastName,
+                    newUser
                 },
                 process.env.JWT_SECRET,
                 {
