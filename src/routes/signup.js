@@ -14,7 +14,7 @@ export const signUp = {
                 return res.sendStatus(409);
             }
             const passwordHash = await bcrypt.hash(password, 10);
-            const [ {insertId} ] = await db.query(`INSERT INTO users (first_name, last_name, email, password) VALUES ('${firstName}', '${lastName}', '${email}', '${passwordHash}')`);
+            const [ {insertId} ] = await db.query(`INSERT INTO users (first_name, last_name, email, password, new_user) VALUES ('${firstName}', '${lastName}', '${email}', '${passwordHash}', TRUE)`);
             const user_id = insertId;
             jwt.sign({
                 user_id,
