@@ -1,3 +1,7 @@
+import { createFitnessPlan } from "./create-fitness-plan";
+import { createMealPlan } from "./create-meal-plan";
+import { createWorkoutRoutine } from "./create-workout-routine";
+import { getUserData } from "./get-user-data";
 import { signIn } from "./signin";
 import { signUp } from "./signup";
 import { submitUserInfo } from "./submit-user-info";
@@ -7,5 +11,9 @@ export const Routes=[
     signIn,
     signUp,
     test,
-    submitUserInfo
+    submitUserInfo,
+    getUserData,
+    createMealPlan,
+    createWorkoutRoutine,
+    createFitnessPlan
 ];
