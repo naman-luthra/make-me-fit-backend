@@ -12,7 +12,7 @@ export const createWorkoutRoutine = {
     method: 'post',
     handler: async (req, res)=>{
         try {
-            const { user_id, workoutRoutineName, fitnessPlanId, goal, equipment } = req.body;
+            const { user_id, workoutRoutineName, fitnessPlanId, workoutRoutineId, goal, equipment } = req.body;
             const { authorization } = req.headers;
             if(!authorization) return res.status(401).json({ message: 'Authorization header not found!' });
             const token = authorization.split(' ')[1];
@@ -23,6 +23,8 @@ export const createWorkoutRoutine = {
                 const db = await getConnectionToDB();
                 const [ result ] = await db.query(`SELECT dob, gender, weight, height FROM users WHERE user_id = '${user_id}'`);
                 if(result.length === 0) return res.status(404).json({ message: 'User not found!' });
+                if(workoutRoutineId)
+                    await db.query(`DELETE FROM workout_routines WHERE routine_id = ${workoutRoutineId}`);
                 const response = await openai.createCompletion({
                     model: "text-davinci-003",
                     prompt: `Write a 7 day workout routine with 3 to 4 excercises in a day in .csv format but use | instead of , having day_number, exercise, reps, sets, muscle_group given that the user is looking for ${goal}. The person is a ${new Date().getFullYear() - result[0].dob.getFullYear()} years old ${result[0].gender}, ${result[0].weight}Kg, ${result[0].height}cm and has access to ${equipment}`,
@@ -49,11 +51,15 @@ export const createWorkoutRoutine = {
                     return dayPlan;
                 });
                 const [ {insertId} ] = await db.query(`INSERT INTO workout_routines (routine_name, data) VALUES ("${workoutRoutineName}", '${JSON.stringify({dayPlanArr: workoutRoutineObj})}')`);
-                if(fitnessPlanId)
+                if(fitnessPlanId){
                     await db.query(`INSERT INTO fitness_plan_workout_routines (plan_id, routine_id) VALUES (${fitnessPlanId}, ${insertId})`);
+                    if(workoutRoutineId)
+                        await db.query(`DELETE FROM fitness_plan_workout_routines WHERE routine_id = ${workoutRoutineId}`);
+                }
                 return res.status(200).json({id: insertId, name: workoutRoutineName, data: workoutRoutineObj});
             });
         } catch (error) {
+            console.log(error);
             if(error) return res.status(500).json({ message: 'Something went wrong!' });
         }
     }
