@@ -15,7 +15,7 @@ export const createFitnessPlan = {
                 const { user_id: user_id_decoded  } = decoded;
                 if( user_id !== user_id_decoded ) return res.status(403).json({ message: 'Not Authorised!' });
                 const db = await getConnectionToDB();
-                const [ {insertId} ] = await db.query(`INSERT INTO fitness_plans (plan_name, start_date) VALUES ("${planName}", CURDATE())`);
+                const [ {insertId} ] = await db.query(`INSERT INTO fitness_plans (plan_name, active_diet_plan_id, active_routine_id, start_date) VALUES ("${planName}", ${mealPlanId}, ${workoutRoutineId}, CURDATE())`);
                 await db.query(`INSERT INTO user_fitness_plans (user_id, plan_id) VALUES ('${user_id}', ${insertId})`);
                 await db.query(`INSERT INTO fitness_plan_diet_plans (plan_id, diet_plan_id) VALUES (${insertId}, ${mealPlanId})`);
                 await db.query(`INSERT INTO fitness_plan_workout_routines (plan_id, routine_id) VALUES (${insertId}, ${workoutRoutineId})`);

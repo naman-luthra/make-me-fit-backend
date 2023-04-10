@@ -12,7 +12,7 @@ export const createWorkoutRoutine = {
     method: 'post',
     handler: async (req, res)=>{
         try {
-            const { user_id, goal, equipment } = req.body;
+            const { user_id, workoutRoutineName, fitnessPlanId, goal, equipment } = req.body;
             const { authorization } = req.headers;
             if(!authorization) return res.status(401).json({ message: 'Authorization header not found!' });
             const token = authorization.split(' ')[1];
@@ -21,11 +21,11 @@ export const createWorkoutRoutine = {
                 const { user_id: user_id_decoded  } = decoded;
                 if( user_id !== user_id_decoded ) return res.status(403).json({ message: 'Not Authorised!' });
                 const db = await getConnectionToDB();
-                const [ result ] = await db.query(`SELECT age, gender, weight, height FROM users WHERE user_id = '${user_id}'`);
+                const [ result ] = await db.query(`SELECT dob, gender, weight, height FROM users WHERE user_id = '${user_id}'`);
                 if(result.length === 0) return res.status(404).json({ message: 'User not found!' });
                 const response = await openai.createCompletion({
                     model: "text-davinci-003",
-                    prompt: `Write a 7 day workout routine with 3 to 4 excercises in a day in .csv format but use | instead of , having day_number, exercise, reps, sets, muscle_group given that the user is looking for ${goal}. The person is a ${result[0].age} years old ${result[0].gender}, ${result[0].weight}Kg, ${result[0].height}cm and has access to ${equipment}`,
+                    prompt: `Write a 7 day workout routine with 3 to 4 excercises in a day in .csv format but use | instead of , having day_number, exercise, reps, sets, muscle_group given that the user is looking for ${goal}. The person is a ${new Date().getFullYear() - result[0].dob.getFullYear()} years old ${result[0].gender}, ${result[0].weight}Kg, ${result[0].height}cm and has access to ${equipment}`,
                     suffix: "",
                     temperature: 0.7,
                     max_tokens: 2512,
@@ -33,10 +33,25 @@ export const createWorkoutRoutine = {
                     frequency_penalty: 0,
                     presence_penalty: 0,
                 }).then((response) => response.data);
-                console.log(`Write a 7 day workout routine with 3 to 4 excercises in a day in .csv format but use | instead of , having day_number, exercise, reps, sets, muscle_group given that the user is looking for ${goal}. The person is a ${result[0].age} years old ${result[0].gender}, ${result[0].weight}Kg, ${result[0].height}cm and has access to ${equipment}`);
-                console.log(response.choices[0].text);
-                const [ {insertId} ] = await db.query(`INSERT INTO workout_routines (data) VALUES ("${response.choices[0].text}")`);
-                return res.status(200).json({workoutRoutineId: insertId, workoutRoutine: response.choices[0].text});
+                const workoutRoutineTable =  response.choices[0].text.split('\n').map((item)=>item.split('|'));
+                const workoutRoutineObj = ['1','2','3','4','5','6','7'].map((day)=>{
+                    const dayPlan = [];
+                    workoutRoutineTable.forEach((item)=>{
+                        if(item[0]===day){
+                            dayPlan.push({
+                                name: item[1],
+                                sets: item[2],
+                                reps: item[3],
+                                muscleGroup: item[4],
+                            });
+                        }
+                    });
+                    return dayPlan;
+                });
+                const [ {insertId} ] = await db.query(`INSERT INTO workout_routines (routine_name, data) VALUES ("${workoutRoutineName}", '${JSON.stringify({dayPlanArr: workoutRoutineObj})}')`);
+                if(fitnessPlanId)
+                    await db.query(`INSERT INTO fitness_plan_workout_routines (plan_id, routine_id) VALUES (${fitnessPlanId}, ${insertId})`);
+                return res.status(200).json({id: insertId, name: workoutRoutineName, data: workoutRoutineObj});
             });
         } catch (error) {
             if(error) return res.status(500).json({ message: 'Something went wrong!' });

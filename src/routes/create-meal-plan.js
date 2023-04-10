@@ -14,6 +14,8 @@ export const createMealPlan = {
         try {
             const {
                 user_id,
+                fitnessPlanId,
+                mealPlanName,
                 cuisine,
                 place,
                 breakfast,
@@ -29,11 +31,11 @@ export const createMealPlan = {
                 const { user_id: user_id_decoded  } = decoded;
                 if( user_id !== user_id_decoded ) return res.status(403).json({ message: 'Not Authorised!' });
                 const db = await getConnectionToDB();
-                const [ result ] = await db.query(`SELECT age, gender, weight, height, dietary_preference, weight_goal FROM users WHERE user_id = '${user_id}'`);
+                const [ result ] = await db.query(`SELECT dob, gender, weight, height, dietary_preference, weight_goal FROM users WHERE user_id = '${user_id}'`);
                 if(result.length === 0) return res.status(404).json({ message: 'User not found!' });
                 const response = await openai.createCompletion({
                     model: "text-davinci-003",
-                    prompt: `Write a 7 day mealplan in .csv format but use | instead of , having day_number,meal,food_combo,calories given that the user likes to eat ${cuisine} food, lives in ${place}. The person is a ${result[0].age} years old ${result[0].gender}, ${result[0].weight}Kg, ${result[0].height}cm and is a ${result[0].dietary_preference}. The person wants to have ${breakfast ? 'breakfast, ' : ''}${lunch ? 'lunch, ' : ''}${snacks ? 'snacks, ' : ''}${dinner ? 'and dinner' : ''}.`,
+                    prompt: `Write a 7 day mealplan in .csv format but use | instead of , having day_number,meal,food_combo,calories given that the user likes to eat ${cuisine} food, lives in ${place}. The person is a ${new Date().getFullYear() - result[0].dob.getFullYear()} years old ${result[0].gender}, ${result[0].weight}Kg, ${result[0].height}cm and is a ${result[0].dietary_preference}. The person wants to have ${breakfast ? 'breakfast, ' : ''}${lunch ? 'lunch, ' : ''}${snacks ? 'snacks, ' : ''}${dinner ? 'and dinner' : ''}.`,
                     suffix: "",
                     temperature: 0.7,
                     max_tokens: 2512,
@@ -41,8 +43,24 @@ export const createMealPlan = {
                     frequency_penalty: 0,
                     presence_penalty: 0,
                 }).then((response) => response.data);
-                const [ {insertId} ] = await db.query(`INSERT INTO diet_plans (description) VALUES ("${response.choices[0].text}")`);
-                return res.status(200).json({mealPlanId: insertId, mealPlan: response.choices[0].text});
+                const mealPlanTable =  response.choices[0].text.split('\n').map((item)=>item.split('|'));
+                const mealPlanObj = ['1','2','3','4','5','6','7'].map((day)=>{
+                    const dayPlan = {};
+                    mealPlanTable.forEach((item)=>{
+                        if(item[0]===day){
+                            dayPlan[item[1].toLowerCase()] = {
+                                name: item[2],
+                                calories: item[3],
+                            };
+                        }
+                    });
+                    return dayPlan;
+                });
+                const [ {insertId} ] = await db.query(`INSERT INTO diet_plans (plan_name, data) VALUES ("${mealPlanName}", '${JSON.stringify({dayPlanArr: mealPlanObj})}')`);
+                if(fitnessPlanId){
+                    await db.query(`INSERT INTO fitness_plan_diet_plans (plan_id, diet_plan_id) VALUES (${fitnessPlanId}, ${insertId})`);
+                }
+                return res.status(200).json({id: insertId, name: mealPlanName, data: mealPlanObj});
             });
         } catch (error) {
             console.log(error);

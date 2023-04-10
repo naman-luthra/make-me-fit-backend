@@ -15,13 +15,13 @@ export const getUserData = {
                 const { user_id: user_id_decoded  } = decoded;
                 if( user_id !== user_id_decoded ) return res.status(403).json({ message: 'Not Authorised!' });
                 const db = await getConnectionToDB();
-                const [ resultUsers ] = await db.query(`SELECT age, gender, weight, height, dietary_preference, activity_level, weight_goal, activity_goal, active_plan_id, new_user FROM users WHERE user_id = '${user_id}'`);
+                const [ resultUsers ] = await db.query(`SELECT dob, gender, weight, height, dietary_preference, activity_level, weight_goal, activity_goal, active_plan_id, new_user FROM users WHERE user_id = '${user_id}'`);
                 if(resultUsers.length === 0) return res.status(404).json({ message: 'User not found!' });
-                const [ resultPlans ] = await db.query(`SELECT plan_id FROM user_fitness_plans WHERE user_id = '${user_id}'`);
+                const [ resultPlans ] = await db.query(`SELECT fitness_plans.plan_id as plan_id, fitness_plans.plan_name as plan_name FROM user_fitness_plans INNER JOIN fitness_plans ON fitness_plans.plan_id = user_fitness_plans.plan_id WHERE user_id = '${user_id}'`);
                 if(resultUsers[0].active_plan_id === null){
                     return res.status(200).json({
                         bodyMetrics: {
-                            age: resultUsers[0].age,
+                            dob: resultUsers[0].dob,
                             gender: resultUsers[0].gender,
                             weight: resultUsers[0].weight,
                             height: resultUsers[0].height,
@@ -32,49 +32,22 @@ export const getUserData = {
                         },
                         newUser: resultUsers[0].new_user,
                         activeFitnessPlan: null,
-                        fitnessPlans: resultPlans,
-                        mealPlan:null,
-                        workoutRoutine:null
+                        fitnessPlans: resultPlans
                     });
                 }
-                const [ [ { diet_plan_id, description: diet_plan_data } ] ] = await db.query(`SELECT fitness_plan_diet_plans.diet_plan_id as diet_plan_id, description FROM fitness_plan_diet_plans INNER JOIN diet_plans ON fitness_plan_diet_plans.diet_plan_id=diet_plans.plan_id WHERE fitness_plan_diet_plans.plan_id = ${resultUsers[0].active_plan_id}`);
-                const [ [ { routine_id, data: routine_data } ] ] = await db.query(`SELECT fitness_plan_workout_routines.routine_id as routine_id, data FROM fitness_plan_workout_routines INNER JOIN workout_routines ON fitness_plan_workout_routines.routine_id=workout_routines.routine_id WHERE fitness_plan_workout_routines.plan_id = ${resultUsers[0].active_plan_id}`);
-                const mealPlanTable =  diet_plan_data.split('\n').map((item)=>item.split('|'));
-                const mealPlanObj = ['1','2','3','4','5','6','7'].map((day)=>{
-                    const dayPlan = {};
-                    mealPlanTable.forEach((item)=>{
-                        if(item[0]===day){
-                            dayPlan[item[1].toLowerCase()] = {
-                                name: item[2],
-                                calories: item[3],
-                            };
-                        }
-                    });
-                    return dayPlan;
-                });
-                const mealPlan = {
+                const [ [ {active_fitness_plan_name, active_diet_plan_id, active_routine_id} ] ] = await db.query(`SELECT plan_name as active_fitness_plan_name, active_diet_plan_id, active_routine_id FROM fitness_plans WHERE plan_id = ${resultUsers[0].active_plan_id}`);
+                const [ dietPlans  ] = await db.query(`SELECT fitness_plan_diet_plans.diet_plan_id as diet_plan_id, data as diet_plan_data, diet_plans.plan_name as plan_name FROM fitness_plan_diet_plans INNER JOIN diet_plans ON fitness_plan_diet_plans.diet_plan_id=diet_plans.plan_id WHERE fitness_plan_diet_plans.plan_id = ${resultUsers[0].active_plan_id}`);
+                const [ routines ] = await db.query(`SELECT fitness_plan_workout_routines.routine_id as routine_id, data as routine_data, workout_routines.routine_name as routine_name FROM fitness_plan_workout_routines INNER JOIN workout_routines ON fitness_plan_workout_routines.routine_id=workout_routines.routine_id WHERE fitness_plan_workout_routines.plan_id = ${resultUsers[0].active_plan_id}`);
+                const mealPlans = dietPlans.map(({diet_plan_id, plan_name, diet_plan_data}) => ({
                     id: diet_plan_id,
-                    data: mealPlanObj
-                };
-                const workoutRoutineTable =  routine_data.split('\n').map((item)=>item.split('|'));
-                const workoutRoutineObj = ['1','2','3','4','5','6','7'].map((day)=>{
-                    const dayPlan = [];
-                    workoutRoutineTable.forEach((item)=>{
-                        if(item[0]===day){
-                            dayPlan.push({
-                                name: item[1],
-                                sets: item[2],
-                                reps: item[3],
-                                muscleGroup: item[4],
-                            });
-                        }
-                    });
-                    return dayPlan;
-                });
-                const workoutRoutine = {
+                    name: plan_name,
+                    data: diet_plan_data.dayPlanArr
+                }));
+                const workoutRoutines = routines.map(({routine_id, routine_name, routine_data}) => ({
                     id: routine_id,
-                    data: workoutRoutineObj
-                };
+                    name: routine_name,
+                    data: routine_data.dayPlanArr
+                }));
                 return res.status(200).json({
                     bodyMetrics: {
                         age: resultUsers[0].age,
@@ -86,10 +59,15 @@ export const getUserData = {
                         weightGoal: resultUsers[0].weight_goal,
                         activityGoal: resultUsers[0].activity_goal
                     },
-                    activeFitnessPlan: resultUsers[0].active_plan_id,
+                    activeFitnessPlan: {
+                        id: resultUsers[0].active_plan_id,
+                        name: active_fitness_plan_name,
+                        activeMealPlanId: active_diet_plan_id,
+                        activeWorkoutRoutineId: active_routine_id,
+                        mealPlans,
+                        workoutRoutines
+                    }, 
                     fitnessPlans: resultPlans,
-                    mealPlan,
-                    workoutRoutine
                  });
             });
         } catch (error) {
