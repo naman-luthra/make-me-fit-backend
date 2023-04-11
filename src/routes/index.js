@@ -3,6 +3,8 @@ import { createMealPlan } from "./create-meal-plan";
 import { createWorkoutRoutine } from "./create-workout-routine";
 import { getPlanData } from "./get-plan-data";
 import { getUserData } from "./get-user-data";
+import { getUserHistory } from "./get-user-history";
+import { saveUserProgress } from "./save-user-progress";
 import { signIn } from "./signin";
 import { signUp } from "./signup";
 import { submitUserInfo } from "./submit-user-info";
@@ -22,4 +24,6 @@ export const Routes=[
     uploadUserImage,
     updateUsermetrics,
     getPlanData,
+    saveUserProgress,
+    getUserHistory,
 ];

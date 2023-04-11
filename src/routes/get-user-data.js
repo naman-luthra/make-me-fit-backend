@@ -17,6 +17,13 @@ export const getUserData = {
                 const db = await getConnectionToDB();
                 const [ resultUsers ] = await db.query(`SELECT image, dob, gender, weight, height, dietary_preference, activity_level, weight_goal, activity_goal, active_plan_id, new_user FROM users WHERE user_id = '${user_id}'`);
                 if(resultUsers.length === 0) return res.status(404).json({ message: 'User not found!' });
+                const [ resultHistory ] = await db.query(`SELECT weight, water, excercise, food FROM tracking_history WHERE user_id = '${user_id}' and date = CURDATE()`);
+                const todayHistory = resultHistory.length === 0 ? null : {
+                    weight: resultHistory[0].weight,
+                    water: resultHistory[0].water,
+                    excercise: resultHistory[0].excercise,
+                    food: resultHistory[0].food.data,
+                };
                 const [ resultPlans ] = await db.query(`SELECT fitness_plans.plan_id as plan_id, fitness_plans.plan_name as plan_name FROM user_fitness_plans INNER JOIN fitness_plans ON fitness_plans.plan_id = user_fitness_plans.plan_id WHERE user_id = '${user_id}'`);
                 if(resultUsers[0].active_plan_id === null){
                     return res.status(200).json({
@@ -34,6 +41,7 @@ export const getUserData = {
                         activeFitnessPlan: null,
                         fitnessPlans: resultPlans,
                         image: resultUsers[0].image.data,
+                        todayHistory,
                     });
                 }
                 const [ [ {active_fitness_plan_name, active_diet_plan_id, active_routine_id} ] ] = await db.query(`SELECT plan_name as active_fitness_plan_name, active_diet_plan_id, active_routine_id FROM fitness_plans WHERE plan_id = ${resultUsers[0].active_plan_id}`);
@@ -71,6 +79,7 @@ export const getUserData = {
                     fitnessPlans: resultPlans,
                     newUser: resultUsers[0].new_user,
                     image: resultUsers[0].image.data,
+                    todayHistory,
                  });
             });
         } catch (error) {
