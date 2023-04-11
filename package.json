@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --exec babel-node -r dotenv/config ./src/server.js",
-    "build": "npx babel src --out-dir dist && cp package.json dist/ && cp .env dist/ && cd dist/ && npm install --production && cd ..",
+    "build": "npx babel-cli src --out-dir dist && cp package.json dist/ && cp .env dist/ && cd dist/ && npm install --production && cd ..",
     "start": "node -r dotenv/config dist/server.js"
   },
   "keywords": [],
