@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "build": "mpx babel src -d dist",
+    "build": "npx babel src -d dist",
     "start": "npm run build && nodemon dist/server.js",
     "serve": "node dist/server.js"
   },
