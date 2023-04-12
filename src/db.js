@@ -1,4 +1,7 @@
 import { createConnection } from 'mysql2/promise';
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 const uri = process.env.DB_URI;
 let connection;

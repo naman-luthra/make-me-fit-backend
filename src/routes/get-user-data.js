@@ -40,7 +40,7 @@ export const getUserData = {
                         newUser: resultUsers[0].new_user,
                         activeFitnessPlan: null,
                         fitnessPlans: resultPlans,
-                        image: resultUsers[0].image.data,
+                        image: resultUsers[0].image?.data,
                         todayHistory,
                     });
                 }
@@ -78,7 +78,7 @@ export const getUserData = {
                     }, 
                     fitnessPlans: resultPlans,
                     newUser: resultUsers[0].new_user,
-                    image: resultUsers[0].image.data,
+                    image: resultUsers[0].image?.data,
                     todayHistory,
                  });
             });
