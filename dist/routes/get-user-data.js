@@ -40,7 +40,8 @@ var getUserData = {
             token = authorization.split(' ')[1];
             _jsonwebtoken["default"].verify(token, process.env.JWT_SECRET, /*#__PURE__*/function () {
               var _ref = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(err, decoded) {
-                var user_id_decoded, db, _yield$db$query, _yield$db$query2, resultUsers, _yield$db$query3, _yield$db$query4, resultHistory, todayHistory, _yield$db$query5, _yield$db$query6, resultPlans, _yield$db$query7, _yield$db$query8, _yield$db$query8$, _yield$db$query8$$, active_fitness_plan_name, active_diet_plan_id, active_routine_id, _yield$db$query9, _yield$db$query10, dietPlans, _yield$db$query11, _yield$db$query12, routines, mealPlans, workoutRoutines;
+                var _resultUsers$0$image2;
+                var user_id_decoded, db, _yield$db$query, _yield$db$query2, resultUsers, _yield$db$query3, _yield$db$query4, resultHistory, todayHistory, _yield$db$query5, _yield$db$query6, resultPlans, _resultUsers$0$image, _yield$db$query7, _yield$db$query8, _yield$db$query8$, _yield$db$query8$$, active_fitness_plan_name, active_diet_plan_id, active_routine_id, _yield$db$query9, _yield$db$query10, dietPlans, _yield$db$query11, _yield$db$query12, routines, mealPlans, workoutRoutines;
                 return _regeneratorRuntime().wrap(function _callee$(_context) {
                   while (1) switch (_context.prev = _context.next) {
                     case 0:
@@ -115,7 +116,7 @@ var getUserData = {
                         newUser: resultUsers[0].new_user,
                         activeFitnessPlan: null,
                         fitnessPlans: resultPlans,
-                        image: resultUsers[0].image.data,
+                        image: (_resultUsers$0$image = resultUsers[0].image) === null || _resultUsers$0$image === void 0 ? void 0 : _resultUsers$0$image.data,
                         todayHistory: todayHistory
                       }));
                     case 28:
@@ -182,7 +183,7 @@ var getUserData = {
                         },
                         fitnessPlans: resultPlans,
                         newUser: resultUsers[0].new_user,
-                        image: resultUsers[0].image.data,
+                        image: (_resultUsers$0$image2 = resultUsers[0].image) === null || _resultUsers$0$image2 === void 0 ? void 0 : _resultUsers$0$image2.data,
                         todayHistory: todayHistory
                       }));
                     case 50:
