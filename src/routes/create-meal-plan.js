@@ -37,7 +37,7 @@ export const createMealPlan = {
                 if(mealPlanId)
                     await db.query(`DELETE FROM diet_plans WHERE id = ${mealPlanId}`);
                 const response = await openai.createCompletion({
-                    model: "text-davinci-003",
+                    model: "gpt-3.5-turbo-0125", // Updated to the newer model version
                     prompt: `Write a 7 day mealplan in .csv format but use | instead of , having day_number,meal,food_combo,calories given that the user likes to eat ${cuisine} food, lives in ${place}. The person is a ${new Date().getFullYear() - result[0].dob.getFullYear()} years old ${result[0].gender}, ${result[0].weight}Kg, ${result[0].height}cm and is a ${result[0].dietary_preference}. The person wants to have ${breakfast ? 'breakfast, ' : ''}${lunch ? 'lunch, ' : ''}${snacks ? 'snacks, ' : ''}${dinner ? 'and dinner' : ''}.`,
                     suffix: "",
                     temperature: 0.7,
@@ -45,7 +45,9 @@ export const createMealPlan = {
                     top_p: 1,
                     frequency_penalty: 0,
                     presence_penalty: 0,
-                }).then((response) => response.data);
+                }).then((response) => response.data).catch((error) => {
+                    throw error;
+                });
                 const mealPlanTable =  response.choices[0].text.split('\n').map((item)=>item.split('|'));
                 const mealPlanObj = ['1','2','3','4','5','6','7'].map((day)=>{
                     const dayPlan = {};

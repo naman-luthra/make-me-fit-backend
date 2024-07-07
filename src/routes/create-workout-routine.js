@@ -49,6 +49,8 @@ export const createWorkoutRoutine = {
                         }
                     });
                     return dayPlan;
+                }).catch((error) => {
+                    throw error;
                 });
                 const [ {insertId} ] = await db.query(`INSERT INTO workout_routines (routine_name, data) VALUES ("${workoutRoutineName}", '${JSON.stringify({dayPlanArr: workoutRoutineObj})}')`);
                 if(fitnessPlanId){
